@@ -1,0 +1,209 @@
+' {$STAMP BS2}
+' {$PBASIC 2.5}
+
+' -----[ Initialise ServoPal ]-------------------------------------------------
+INPUT 12
+DO UNTIL 12
+LOOP
+LOW 12
+PAUSE 100
+HIGH 12
+
+Speaker       CON 2
+
+SensorPowerR  CON 4
+SensorPowerM  CON 6
+SensorPowerL  CON 8
+
+LineSensorInR CON 3
+LineSensorInM CON 5
+LineSensorInL CON 7
+
+LEDR          CON 9
+LEDM          CON 10
+LEDL          CON 11
+
+Sense         VAR Word
+Threshold     VAR Word
+SL            VAR Bit
+SM            VAR Bit
+SR            VAR Bit
+
+CombinedNow   VAR Nib
+CombinedLast  VAR Nib
+
+DL            VAR Word
+DR            VAR Word
+Dir           VAR Nib
+
+Counter       VAR Byte ' count, used for various features
+
+CombinedLast = 7
+Threshold = 140
+
+FOR Counter = 1 TO 4
+  FREQOUT Speaker, 100, 3000
+  PAUSE 200
+NEXT
+
+DO
+  PAUSE 1
+
+  HIGH SensorPowerL               ' activate sensor
+  HIGH LineSensorInL              ' discharge QTI cap
+  PAUSE 1
+  RCTIME LineSensorInL, 1, Sense  ' read sensor value
+  LOW SensorPowerL                ' deactivate sensor
+
+  IF Sense > Threshold THEN
+    HIGH LEDL
+    SL = 1
+  ELSE
+    LOW LEDL
+    SL = 0
+  ENDIF
+
+  HIGH SensorPowerM               ' activate sensor
+  HIGH LineSensorInM              ' discharge QTI cap
+  PAUSE 1
+  RCTIME LineSensorInM, 1, Sense  ' read sensor value
+  LOW SensorPowerM                ' deactivate sensor
+
+  IF Sense > Threshold THEN
+    HIGH LEDM
+    SM = 1
+  ELSE
+    LOW LEDM
+    SM = 0
+  ENDIF
+
+  HIGH SensorPowerR               ' activate sensor
+  HIGH LineSensorInR              ' discharge QTI cap
+  PAUSE 1
+  RCTIME LineSensorInR, 1, Sense  ' read sensor value
+  LOW SensorPowerR                ' deactivate sensor
+
+  IF Sense > Threshold THEN
+    HIGH LEDR
+    SR = 1
+  ELSE
+    LOW LEDR
+    SR = 0
+  ENDIF
+
+  ' set combined value
+  IF CombinedNow > 0 THEN
+    CombinedLast = CombinedNow
+  ENDIF
+  CombinedNow = 0
+  IF SL = 1 THEN CombinedNow = 1
+  IF SM = 1 THEN CombinedNow = CombinedNow + 2
+  IF SR = 1 THEN CombinedNow = CombinedNow + 4
+
+  ' set drive differential
+  IF CombinedNow = 0 AND CombinedLast = 0 THEN Dir = 0 ' hard left
+  IF CombinedNow = 0 AND CombinedLast = 1 THEN Dir = 0 ' hard left
+  IF CombinedNow = 0 AND CombinedLast = 2 THEN Dir = 0 ' hard left
+  IF CombinedNow = 0 AND CombinedLast = 3 THEN Dir = 0 ' hard left
+  IF CombinedNow = 0 AND CombinedLast = 4 THEN Dir = 6 ' hard right
+  IF CombinedNow = 0 AND CombinedLast = 5 THEN Dir = 6 ' hard right
+  IF CombinedNow = 0 AND CombinedLast = 6 THEN Dir = 6 ' hard right
+  IF CombinedNow = 0 AND CombinedLast = 7 THEN Dir = 6 ' hard right
+
+  IF CombinedNow = 1 AND CombinedLast = 0 THEN Dir = 1 ' left
+  IF CombinedNow = 1 AND CombinedLast = 1 THEN Dir = 1 ' left
+  IF CombinedNow = 1 AND CombinedLast = 2 THEN Dir = 2 ' slight left
+  IF CombinedNow = 1 AND CombinedLast = 3 THEN Dir = 2 ' slight left
+  IF CombinedNow = 1 AND CombinedLast = 4 THEN Dir = 2 ' slight left
+  IF CombinedNow = 1 AND CombinedLast = 5 THEN Dir = 2 ' slight left
+  IF CombinedNow = 1 AND CombinedLast = 6 THEN Dir = 2 ' slight left
+  IF CombinedNow = 1 AND CombinedLast = 7 THEN Dir = 1 ' left
+
+  IF CombinedNow = 2 AND CombinedLast = 0 THEN Dir = 3 ' straight
+  IF CombinedNow = 2 AND CombinedLast = 1 THEN Dir = 4 ' slight right
+  IF CombinedNow = 2 AND CombinedLast = 2 THEN Dir = 3 ' straight
+  IF CombinedNow = 2 AND CombinedLast = 3 THEN Dir = 4 ' slight right
+  IF CombinedNow = 2 AND CombinedLast = 4 THEN Dir = 2 ' slight left
+  IF CombinedNow = 2 AND CombinedLast = 5 THEN Dir = 3 ' straight
+  IF CombinedNow = 2 AND CombinedLast = 6 THEN Dir = 2 ' slight left
+  IF CombinedNow = 2 AND CombinedLast = 7 THEN Dir = 3 ' straight
+
+  IF CombinedNow = 3 AND CombinedLast = 0 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 1 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 2 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 3 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 4 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 5 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 6 THEN Dir = 2 ' slight left
+  IF CombinedNow = 3 AND CombinedLast = 7 THEN Dir = 2 ' slight left
+
+  IF CombinedNow = 4 AND CombinedLast = 0 THEN Dir = 4 ' slight right
+  IF CombinedNow = 4 AND CombinedLast = 1 THEN Dir = 5 ' right
+  IF CombinedNow = 4 AND CombinedLast = 2 THEN Dir = 5 ' right
+  IF CombinedNow = 4 AND CombinedLast = 3 THEN Dir = 4 ' slight right
+  IF CombinedNow = 4 AND CombinedLast = 4 THEN Dir = 4 ' slight right
+  IF CombinedNow = 4 AND CombinedLast = 5 THEN Dir = 4 ' slight right
+  IF CombinedNow = 4 AND CombinedLast = 6 THEN Dir = 4 ' slight right
+  IF CombinedNow = 4 AND CombinedLast = 7 THEN Dir = 4 ' slight right
+
+  IF CombinedNow = 5 AND CombinedLast = 0 THEN Dir = 3 ' straight
+  IF CombinedNow = 5 AND CombinedLast = 1 THEN Dir = 4 ' slight right
+  IF CombinedNow = 5 AND CombinedLast = 2 THEN Dir = 3 ' straight
+  IF CombinedNow = 5 AND CombinedLast = 3 THEN Dir = 4 ' slight right
+  IF CombinedNow = 5 AND CombinedLast = 4 THEN Dir = 2 ' slight left
+  IF CombinedNow = 5 AND CombinedLast = 5 THEN Dir = 3 ' straight
+  IF CombinedNow = 5 AND CombinedLast = 6 THEN Dir = 2 ' slight left
+  IF CombinedNow = 5 AND CombinedLast = 7 THEN Dir = 3 ' straight
+
+  IF CombinedNow = 6 AND CombinedLast = 0 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 1 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 2 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 3 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 4 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 5 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 6 THEN Dir = 4 ' slight right
+  IF CombinedNow = 6 AND CombinedLast = 7 THEN Dir = 4 ' slight right
+
+  IF CombinedNow = 7 AND CombinedLast = 0 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 1 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 2 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 3 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 4 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 5 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 6 THEN Dir = 3 ' straight
+  IF CombinedNow = 7 AND CombinedLast = 7 THEN Dir = 3 ' straight
+
+  IF Dir = 0 THEN ' hard left
+    DL = 730
+    DR = 730
+  ENDIF
+  IF Dir = 1 THEN ' left
+    DL = 750
+    DR = 730
+  ENDIF
+  IF Dir = 2 THEN ' slight left
+    DL = 760
+    DR = 730
+  ENDIF
+  IF Dir = 3 THEN ' straight
+    DL = 770
+    DR = 730
+  ENDIF
+  IF Dir = 4 THEN ' slight right
+    DL = 770
+    DR = 740
+  ENDIF
+  IF Dir = 5 THEN ' right
+    DL = 770
+    DR = 750
+  ENDIF
+  IF Dir = 6 THEN ' hard right
+    DL = 770
+    DR = 770
+  ENDIF
+
+  ' drive
+  PULSOUT 12, DR
+  PULSOUT 12, DL
+
+LOOP
